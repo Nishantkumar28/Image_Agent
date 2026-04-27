@@ -1,0 +1,44 @@
+# Environment variables — NEVER commit API keys
+.env
+*.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# rembg / ONNX model cache
+*.onnx
+u2net.onnx
+u2net_human_seg.onnx
+
+# Temp & output files (runtime generated)
+cutout-ai/temp/
+cutout-ai/outputs/
+
+# Byte-compiled files
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
