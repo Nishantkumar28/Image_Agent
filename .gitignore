@@ -42,3 +42,6 @@ Thumbs.db
 
 # Logs
 *.log
+err_log.txt
+error.txt
+test_upload.jpg

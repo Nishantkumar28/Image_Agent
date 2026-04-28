@@ -78,7 +78,7 @@ class SceneAnalyser:
             user_msg += " IMPORTANT: Return ONLY raw JSON with no explanation, no markdown, no backticks."
         
         message = self.client.messages.create(
-            model="claude-opus-4-5",
+            model="claude-sonnet-4-6",
             max_tokens=2048,
             system=SYSTEM_PROMPT,
             messages=[
