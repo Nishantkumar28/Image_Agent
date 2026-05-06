@@ -5,7 +5,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -53,14 +53,16 @@ async def health():
 async def process_url(request: Request):
     body = await request.json()
     url = body.get("url", "").strip()
+    prompt = body.get("prompt", "").strip() or None
+    
     if not url:
         raise HTTPException(status_code=400, detail="URL must not be empty.")
-    result = orchestrator.run(url)
+    result = orchestrator.run(url, prompt=prompt)
     return JSONResponse(content=result)
 
 
 @app.post("/process/upload")
-async def process_upload(file: UploadFile = File(...)):
+async def process_upload(file: UploadFile = File(...), prompt: str = Form(None)):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image files are accepted.")
 
@@ -74,7 +76,7 @@ async def process_upload(file: UploadFile = File(...)):
     async with aiofiles.open(save_path, "wb") as f:
         await f.write(content)
 
-    result = orchestrator.run(save_path)
+    result = orchestrator.run(save_path, prompt=prompt)
     return JSONResponse(content=result)
 
 

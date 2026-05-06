@@ -223,6 +223,25 @@ body::before {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+.prompt-wrapper { margin-top: 12px; }
+.prompt-input {
+  width: 100%;
+  padding: 10px 14px 10px 44px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all var(--transition);
+}
+.prompt-input::placeholder { color: var(--text-muted); }
+.prompt-input:focus {
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.04);
+}
+
 /* ── Buttons ── */
 .btn {
   display: inline-flex;

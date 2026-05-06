@@ -98,6 +98,7 @@ function animateSteps(completedSteps) {
 // ── Process URL ───────────────────────────────────────────
 async function processURL() {
   const url = document.getElementById('url-input').value.trim();
+  const prompt = document.getElementById('url-prompt-input').value.trim();
   if (!url) {
     document.getElementById('url-input').focus();
     return;
@@ -109,7 +110,7 @@ async function processURL() {
     const response = await fetch(`${API_BASE}/process/url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, prompt }),
     });
     const result = await response.json();
     handleResult(result);
@@ -123,11 +124,15 @@ async function processURL() {
 // ── Process Upload ────────────────────────────────────────
 async function processUpload() {
   if (!selectedFile) return;
+  const prompt = document.getElementById('upload-prompt-input').value.trim();
   showProcessing();
   setButtonLoading('upload-submit-btn', true);
 
   const formData = new FormData();
   formData.append('file', selectedFile);
+  if (prompt) {
+    formData.append('prompt', prompt);
+  }
 
   try {
     const response = await fetch(`${API_BASE}/process/upload`, {
@@ -246,6 +251,8 @@ function resetUI() {
   document.getElementById('error-section').classList.add('hidden');
   document.getElementById('results-section').classList.add('hidden');
   document.getElementById('url-input').value = '';
+  document.getElementById('url-prompt-input').value = '';
+  document.getElementById('upload-prompt-input').value = '';
   clearFile();
   currentJobId = null;
   window.scrollTo({ top: 0, behavior: 'smooth' });

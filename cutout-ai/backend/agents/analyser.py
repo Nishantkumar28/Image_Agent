@@ -14,8 +14,8 @@ project_root = os.path.dirname(backend_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from backend.config import ANTHROPIC_API_KEY, TEMP_DIR
-import anthropic
+from backend.config import OPENAI_API_KEY, TEMP_DIR
+import openai
 
 SYSTEM_PROMPT = """You are an image analysis expert for a video editing tool. 
 Your job is to identify every distinct character, person, animal, 
@@ -43,12 +43,14 @@ Format exactly:
       "confidence": 0.95
     }
   ]
-}"""
+}
+
+If a specific instruction or prompt is provided by the user, PRIORITIZE identifying objects that match that instruction. If the user asks for 'mountains', find the mountains. If they ask for 'the dog', find only the dog. If no specific prompt is given, list all significant objects."""
 
 
 class SceneAnalyser:
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     def _prepare_image(self, image_path: str) -> tuple[str, str]:
         """Resize if needed, return base64 string and media type."""
@@ -72,25 +74,29 @@ class SceneAnalyser:
         img_b64 = base64.b64encode(buffer.read()).decode("utf-8")
         return img_b64, "image/jpeg"
 
-    def _call_claude(self, img_b64: str, media_type: str, retry: bool = False) -> str:
+    def _call_openai(self, img_b64: str, media_type: str, prompt: str = None, retry: bool = False) -> str:
         user_msg = "Analyse this image and return the JSON list of objects." 
+        if prompt:
+            user_msg = f"User instruction: {prompt}\n\nAnalyse this image according to the instruction and return the JSON list of matching objects."
+        
         if retry:
             user_msg += " IMPORTANT: Return ONLY raw JSON with no explanation, no markdown, no backticks."
         
-        message = self.client.messages.create(
-            model="claude-sonnet-4-6",
+        response = self.client.chat.completions.create(
+            model="gpt-4o",
             max_tokens=2048,
-            system=SYSTEM_PROMPT,
             messages=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
                 {
                     "role": "user",
                     "content": [
                         {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": img_b64,
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{img_b64}"
                             },
                         },
                         {"type": "text", "text": user_msg},
@@ -98,7 +104,7 @@ class SceneAnalyser:
                 }
             ],
         )
-        return message.content[0].text
+        return response.choices[0].message.content
 
     def _parse_response(self, raw: str) -> list[dict]:
         # Strip markdown fences if present
@@ -109,19 +115,19 @@ class SceneAnalyser:
         data = json.loads(text)
         return data.get("objects", [])
 
-    def analyse(self, image_path: str) -> list[dict]:
+    def analyse(self, image_path: str, prompt: str = None) -> list[dict]:
         img_b64, media_type = self._prepare_image(image_path)
 
         try:
-            raw = self._call_claude(img_b64, media_type, retry=False)
+            raw = self._call_openai(img_b64, media_type, prompt=prompt, retry=False)
             objects = self._parse_response(raw)
         except (json.JSONDecodeError, KeyError, ValueError):
             # Retry once
             try:
-                raw = self._call_claude(img_b64, media_type, retry=True)
+                raw = self._call_openai(img_b64, media_type, prompt=prompt, retry=True)
                 objects = self._parse_response(raw)
             except Exception as e:
-                raise ValueError(f"Failed to parse Claude response after retry. Raw: {raw}") from e
+                raise ValueError(f"Failed to parse OpenAI response after retry. Raw: {raw}") from e
 
         # Filter low-confidence objects
         objects = [obj for obj in objects if obj.get("confidence", 0) >= 0.5]

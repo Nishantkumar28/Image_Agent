@@ -29,7 +29,7 @@ class Orchestrator:
         self.segmentor = Segmentor()
         self.enhancer = Enhancer()
 
-    def run(self, source: str) -> dict:
+    def run(self, source: str, prompt: str = None) -> dict:
         job_id = str(uuid.uuid4())[:8]
         result = {
             "job_id": job_id,
@@ -52,7 +52,7 @@ class Orchestrator:
 
         # STEP 2 — Analyse scene
         try:
-            objects = self.analyser.analyse(image_path)
+            objects = self.analyser.analyse(image_path, prompt=prompt)
             result["steps"].append({"step": "analyse", "status": "ok", "objects_found": len(objects)})
             logger.info(f"[{job_id}] Found {len(objects)} objects.")
         except Exception as e:
